@@ -10,6 +10,8 @@ elif ! ( [ "$EUID" -eq 0 ] || SUDO_ASKPASS=/bin/false sudo -A /bin/true >/dev/nu
   exit 1
 fi
 
+sudo apt-get install -y gdb
+
 TS=$(date +%s)
 
 SAVE="$(cat /proc/sys/kernel/core_pattern)"
