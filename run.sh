@@ -22,12 +22,16 @@ mkdir -p /tmp
 
 echo "$PWD/binary.core" | sudo tee /proc/sys/kernel/core_pattern >/dev/null
 
+echo "CORE FILE PATH: $(cat /proc/sys/kernel/core_pattern)"
+
 if g++ -o binary -g code.cc && ./binary ; then
   echo "$SAVE" | sudo tee /proc/sys/kernel/core_pattern >/dev/null >/dev/null
   echo 'nah, this should have crashed.'
 else
   echo "$SAVE" | sudo tee /proc/sys/kernel/core_pattern >/dev/null
   echo 'yay, crashed!'
+  echo
+  ls -las
   echo
   echo 'thread apply all bt' | gdb binary binary.core
   rm -f binary binary.core
