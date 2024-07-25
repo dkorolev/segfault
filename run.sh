@@ -63,7 +63,7 @@ else
   fi
   if [ -n "$CORE" ] ; then
     echo "::group::${DEBUGGER}"
-    $DEBUGGER -q -ex "thread apply all bt" -ex "quit" binary "$CORE"
+    echo -en 'thread apply all bt\nquit\n' | $DEBUGGER -q binary "$CORE"
     echo '::endgroup::'
     rm -f "$CORE"
   else
