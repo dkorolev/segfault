@@ -10,9 +10,9 @@ elif ! ( [ "$EUID" -eq 0 ] || SUDO_ASKPASS=/bin/false sudo -A /bin/true >/dev/nu
   exit 1
 fi
 
-sudo apt-get install -y gdb
-
-TS=$(date +%s)
+if ! gdb --version >/dev/null ; then
+  sudo apt-get install -y gdb
+fi
 
 SAVE="$(cat /proc/sys/kernel/core_pattern)"
 
@@ -20,15 +20,15 @@ ulimit -c unlimited
 
 mkdir -p /tmp
 
-echo "/tmp/core.${TS}.%e.tmp" | sudo tee /proc/sys/kernel/core_pattern >/dev/null
+echo "$PWD/binary.core" | sudo tee /proc/sys/kernel/core_pattern >/dev/null
 
-if g++ -g code.cc && ./a.out ; then
+if g++ -o binary -g code.cc && ./binary ; then
   echo "$SAVE" | sudo tee /proc/sys/kernel/core_pattern >/dev/null >/dev/null
   echo 'nah, this should have crashed.'
 else
   echo "$SAVE" | sudo tee /proc/sys/kernel/core_pattern >/dev/null
   echo 'yay, crashed!'
   echo
-  echo 'thread apply all bt' | gdb a.out "/tmp/core.${TS}.a.out.tmp"
-  rm "/tmp/core.${TS}.a.out.tmp"
+  echo 'thread apply all bt' | gdb binary binary.core
+  rm -f binary binary.core
 fi
