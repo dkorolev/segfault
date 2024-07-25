@@ -66,7 +66,7 @@ else
     if [[ "$(uname)" != 'Darwin' ]] ; then
       echo -en 'thread apply all bt\nquit\n' | $DEBUGGER binary "$CORE"
     else
-      echo bt | $DEBUGGER binary "$CORE"
+      echo bt | $DEBUGGER binary -c "$CORE"
     fi
     echo '::endgroup::'
     rm -f "$CORE"
