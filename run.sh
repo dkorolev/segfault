@@ -63,7 +63,11 @@ else
   fi
   if [ -n "$CORE" ] ; then
     echo "::group::${DEBUGGER}"
-    echo -en 'thread apply all bt\nquit\n' | $DEBUGGER binary "$CORE"
+    if [[ "$(uname)" != 'Darwin' ]] ; then
+      echo -en 'thread apply all bt\nquit\n' | $DEBUGGER binary "$CORE"
+    else
+      echo bt | $DEBUGGER binary "$CORE"
+    fi
     echo '::endgroup::'
     rm -f "$CORE"
   else
