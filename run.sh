@@ -10,7 +10,7 @@ elif ! ( [ "$EUID" -eq 0 ] || SUDO_ASKPASS=/bin/false sudo -A /bin/true >/dev/nu
   exit 1
 fi
 
-if ! gdb --version >/dev/null ; then
+if ! gdb --version >/dev/null 2>&1 ; then
   echo '::group::apt-get install -y gdb'
   sudo apt-get install -y gdb
   echo '::endgroup::'
