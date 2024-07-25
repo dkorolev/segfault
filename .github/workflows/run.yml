@@ -10,7 +10,7 @@ jobs:
   run:
     strategy:
       matrix:
-        os: [ubuntu-latest]  # TODO(dkorolev): macos-latest
+        os: [ubuntu-latest, macos-latest]
     runs-on: ${{ matrix.os }}
     steps:
       - name: git clone
