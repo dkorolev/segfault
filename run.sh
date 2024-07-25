@@ -2,42 +2,68 @@
 
 set -e
 
-if [[ $UID == 0 || $EUID == 0 ]] ; then
-  echo 'please do not run as root.'
-  exit 1
-elif ! ( [ "$EUID" -eq 0 ] || SUDO_ASKPASS=/bin/false sudo -A /bin/true >/dev/null 2>&1) ; then
-  echo 'need sudo.'
-  exit 1
+if [[ "$(uname)" != 'Darwin' ]] ; then
+  if [[ $UID == 0 || $EUID == 0 ]] ; then
+    echo 'please do not run as root.'
+    exit 1
+  elif ! ( [ "$EUID" -eq 0 ] || SUDO_ASKPASS=/bin/false sudo -A /bin/true >/dev/null 2>&1) ; then
+    echo 'need sudo.'
+    exit 1
+  fi
 fi
 
-if ! gdb --version >/dev/null 2>&1 ; then
-  echo '::group::apt-get install -y gdb'
-  sudo apt-get install -y gdb
-  echo '::endgroup::'
+if [[ "$(uname)" != 'Darwin' ]] ; then
+  DEBUGGER=gdb
+else
+  DEBUGGER=lldb
 fi
 
-SAVE="$(cat /proc/sys/kernel/core_pattern)"
+if ! $DEBUGGER --version >/dev/null 2>&1 ; then
+  if [[ "$(uname)" != 'Darwin' ]] ; then
+    echo '::group::apt-get install -y gdb'
+    sudo apt-get install -y gdb
+    echo '::endgroup::'
+  else
+    echo '::group::brew install llvm'
+    brew install llvm
+    echo '::endgroup::'
+  fi
+fi
+
+if [[ "$(uname)" != 'Darwin' ]] ; then
+  SAVE="$(cat /proc/sys/kernel/core_pattern)"
+fi
 
 ulimit -c unlimited
 
 mkdir -p /tmp
 
-echo "$PWD/binary.core" | sudo tee /proc/sys/kernel/core_pattern >/dev/null
+if [[ "$(uname)" != 'Darwin' ]] ; then
+  echo "$PWD/binary.core" | sudo tee /proc/sys/kernel/core_pattern >/dev/null
+fi
 
 echo '::group::./binary'
 if g++ -o binary -g code.cc && ./binary ; then
   echo '::endgroup::'
-  echo "$SAVE" | sudo tee /proc/sys/kernel/core_pattern >/dev/null >/dev/null
+  if [[ "$(uname)" != 'Darwin' ]] ; then
+    echo "$SAVE" | sudo tee /proc/sys/kernel/core_pattern >/dev/null >/dev/null
+  fi
   echo 'nah, this should have crashed.'
 else
   echo '::endgroup::'
-  echo "$SAVE" | sudo tee /proc/sys/kernel/core_pattern >/dev/null
+  if [[ "$(uname)" != 'Darwin' ]] ; then
+    echo "$SAVE" | sudo tee /proc/sys/kernel/core_pattern >/dev/null
+  fi
   echo 'yay, crashed!'
   echo
-  CORE="$(find . -name 'binary.core*' | head -n 1)"
+  if [[ "$(uname)" == 'Darwin' ]] ; then
+    CORE="$(find /cores -name 'core.*' | head -n 1)"
+  else
+    CORE="$(find . -name 'binary.core*' | head -n 1)"
+  fi
   if [ -n "$CORE" ] ; then
-    echo '::group::gdb'
-    gdb -q -ex "thread apply all bt" -ex "quit" binary "$CORE"
+    echo "::group::${DEBUGGER}"
+    $DEBUGGER -q -ex "thread apply all bt" -ex "quit" binary "$CORE"
     echo '::endgroup::'
     rm -f "$CORE"
   else
