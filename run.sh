@@ -33,6 +33,10 @@ else
   echo
   ls -las
   echo
-  echo 'thread apply all bt' | gdb binary binary.core
-  rm -f binary binary.core
+  CORE="$(find . -name 'binary.core*' | head -n 1)"
+  if [ -n "$CORE" ] ; then
+    gdb -q -ex "thread apply all bt" -ex "quit" binary "$CORE"
+    rm -f "$CORE"
+  fi
+  rm -f binary
 fi
